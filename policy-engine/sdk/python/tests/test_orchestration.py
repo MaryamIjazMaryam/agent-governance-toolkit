@@ -233,5 +233,38 @@ class OrchestrationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(runtime.requests[0].intervention_point, "not_a_real_point")
 
 
+    def test_close_calls_runtime_close(self):
+        class ClosableRuntime(QueueRuntime):
+            def __init__(self):
+                super().__init__([])
+                self.close_calls = 0
+
+            def close(self):
+                self.close_calls += 1
+
+        runtime = ClosableRuntime()
+        control = AgentControl(runtime)
+
+        control.close()
+
+        self.assertEqual(runtime.close_calls, 1)
+
+    def test_context_manager_closes_runtime(self):
+        class ClosableRuntime(QueueRuntime):
+            def __init__(self):
+                super().__init__([])
+                self.close_calls = 0
+
+            def close(self):
+                self.close_calls += 1
+
+        runtime = ClosableRuntime()
+
+        with AgentControl(runtime) as control:
+            self.assertIsInstance(control, AgentControl)
+
+        self.assertEqual(runtime.close_calls, 1)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -63,6 +63,21 @@ class AgentControl:
         self._policy_id_index, self._annotator_index = _labels_from_client(runtime_client)
         self._approval_config = _approval_config_from_client(runtime_client)
 
+    def close(self) -> None:
+        """Close the underlying runtime client when it supports cleanup."""
+        close = getattr(self._runtime_client, "close", None)
+        if callable(close):
+            close()
+
+    def __enter__(self) -> "AgentControl":
+        """Support using AgentControl as a context manager."""
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
+        """Close the runtime client when leaving the context."""
+        self.close()
+
+
     @classmethod
     def from_native(
         cls,
